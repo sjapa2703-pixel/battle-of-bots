@@ -19,6 +19,15 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
   },
+  team: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  isTeamAccount: {
+    type: Boolean,
+    default: false,
+  },
   avatarUrl: {
     type: String,
     default: '',

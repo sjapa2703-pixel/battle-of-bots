@@ -32,9 +32,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password) => {
+  const register = async (name, email, password, team) => {
     try {
-      const res = await axios.post('/api/auth/register', { nickname: name, email, password });
+      const res = await axios.post('/api/auth/register', { nickname: name, email, password, team });
 
       return { success: true, message: res.data.message };
     } catch (error) {

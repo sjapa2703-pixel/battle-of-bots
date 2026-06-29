@@ -1,11 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Russo+One&display=swap');
 
 :root {
-  --color-primary: #7C3AED;
-  --color-secondary: #A78BFA;
-  --color-cta: #F43F5E;
-  --color-bg: #0F0F23;
+  --color-primary: #D35400; /* NHRL Orange */
+  --color-secondary: #E67E22; /* Lighter Orange */
+  --color-cta: #E74C3C; /* Red Accent */
+  --color-bg: #1a1a1d; /* Dark Slate Grey */
   --color-text: #E2E8F0;
+  --color-card-bg: #222225;
+  --color-card-border: #333338;
 
   --font-heading: 'Russo One', sans-serif;
   --font-body: 'Chakra Petch', sans-serif;
@@ -105,19 +107,19 @@ a:hover {
 }
 
 .neon-card {
-  background: rgba(15, 15, 35, 0.7);
-  border: 1px solid rgba(124, 58, 237, 0.3);
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
   padding: 24px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   position: relative;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .neon-card:hover {
   transform: translateY(-5px);
-  border-color: rgba(124, 58, 237, 0.8);
-  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.2);
+  border-color: var(--color-primary);
+  box-shadow: 0 10px 30px rgba(211, 84, 0, 0.2);
 }
 
 input,
@@ -220,33 +222,35 @@ select:focus {
 }
 
 body.light-mode {
-  --color-bg: #FFFFFF;
-  --color-text: #0F0F23;
-  --color-primary: #6D28D9;
-  --color-secondary: #4C1D95;
-  --color-cta: #E11D48;
+  --color-bg: #F8FAFC;
+  --color-text: #0F172A;
+  --color-primary: #D35400;
+  --color-secondary: #E67E22;
+  --color-cta: #E74C3C;
+  --color-card-bg: #FFFFFF;
+  --color-card-border: #E2E8F0;
 }
 
 body.light-mode::before {
-  opacity: 0.1;
+  display: none;
 }
 
 body.light-mode .neon-card {
-  background: rgba(245, 245, 250, 0.9);
-  border: 1px solid rgba(109, 40, 217, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 body.light-mode .neon-card:hover {
-  border-color: rgba(109, 40, 217, 0.5);
-  box-shadow: 0 10px 30px rgba(109, 40, 217, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 10px 15px -3px rgba(211, 84, 0, 0.1), 0 4px 6px -2px rgba(211, 84, 0, 0.05);
 }
 
 body.light-mode input,
 body.light-mode textarea,
 body.light-mode select {
-  background: #FFFFFF;
-  color: #0F0F23;
+  background: #F1F5F9;
+  color: #0F172A;
   border-color: #CBD5E1;
 }
 
@@ -254,19 +258,48 @@ body.light-mode input:focus,
 body.light-mode textarea:focus,
 body.light-mode select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 5px rgba(109, 40, 217, 0.2);
+  box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.15);
+  background: #FFFFFF;
 }
 
 body.light-mode .glitch {
   color: var(--color-text);
-  text-shadow: 2px 2px 0px rgba(109, 40, 217, 0.15);
+  text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.1);
 }
 
 body.light-mode .glitch::before,
 body.light-mode .glitch::after {
-  display: block;
   background: transparent;
-  opacity: 0.7;
+  opacity: 0.8;
+}
+
+body.light-mode .glitch::before {
+  text-shadow: -1px 0 var(--color-cta);
+}
+
+body.light-mode .glitch::after {
+  text-shadow: -1px 0 var(--color-primary);
+}
+
+body.light-mode .btn {
+  background: #FFFFFF;
+}
+
+body.light-mode .btn:hover {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 6px -1px rgba(211, 84, 0, 0.3);
+  text-shadow: none;
+}
+
+body.light-mode .btn.cta {
+  background: var(--color-cta);
+  color: #FFFFFF;
+}
+
+body.light-mode .btn.cta:hover {
+  background: #C0392B;
+  box-shadow: 0 4px 6px -1px rgba(231, 76, 60, 0.4);
 }
 
 .nav-links {

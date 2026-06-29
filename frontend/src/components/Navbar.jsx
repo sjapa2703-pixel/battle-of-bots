@@ -6,7 +6,7 @@ import { Trophy, Home, User, ShieldAlert, LogOut, LogIn, Sun, Moon } from 'lucid
 function Navbar() {
   const location = useLocation();
   const { user, logout } = useContext(AuthContext);
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
   useEffect(() => {
     if (theme === 'light') {

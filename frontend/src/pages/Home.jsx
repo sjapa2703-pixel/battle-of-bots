@@ -1,11 +1,28 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import TournamentBracket from '../components/TournamentBracket';
 
 const Home = () => {
   const [tournaments, setTournaments] = useState([]);
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [viewingBracketId, setViewingBracketId] = useState(null);
+  const [viewingMatches, setViewingMatches] = useState([]);
+
+  const loadBracket = async (id) => {
+    if (viewingBracketId === id) {
+      setViewingBracketId(null);
+      return;
+    }
+    try {
+      const res = await axios.get(`/api/tournaments/${id}`);
+      setViewingMatches(res.data.matches || []);
+      setViewingBracketId(id);
+    } catch (err) {
+      console.error('Error loading bracket');
+    }
+  };
 
   useEffect(() => {
 
@@ -126,11 +143,25 @@ const Home = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {tournaments.map(item => (
               <div key={item._id} className="neon-card" style={{ padding: '15px', borderLeft: item.status === 'Live' ? '4px solid var(--color-cta)' : '1px solid var(--color-primary)' }}>
-                <h3>{item.title}</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <h3>{item.title}</h3>
+                  <button 
+                    onClick={() => loadBracket(item._id)} 
+                    className="btn" 
+                    style={{ padding: '8px 16px', fontSize: '0.9rem', width: '100%', maxWidth: '200px' }}
+                  >
+                    {viewingBracketId === item._id ? 'Hide Bracket' : '🏆 View Bracket'}
+                  </button>
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
                   <span>{new Date(item.startDate).toLocaleDateString()}</span>
                   <span style={{ color: item.status === 'Live' ? 'var(--color-cta)' : 'var(--color-text)' }}>{item.status}</span>
                 </div>
+                {viewingBracketId === item._id && (
+                  <div style={{ marginTop: '20px', overflowX: 'auto', background: 'rgba(0,0,0,0.2)', padding: '15px', borderRadius: '8px' }}>
+                    <TournamentBracket matches={viewingMatches} adminMode={false} />
+                  </div>
+                )}
               </div>
             ))}
           </div>

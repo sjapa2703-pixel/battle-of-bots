@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   createTournament,
+  generateBracket,
   updateTournament,
   deleteTournament,
   createMatch,
@@ -18,6 +19,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 router.use(protect, admin);
 
 router.post('/tournaments', createTournament);
+router.post('/tournaments/:id/generate', generateBracket);
 router.put('/tournaments/:id', updateTournament);
 router.delete('/tournaments/:id', deleteTournament);
 

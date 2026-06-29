@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import TournamentBracket from '../components/TournamentBracket';
 
 const Admin = () => {
   const { user } = useContext(AuthContext);
@@ -14,6 +15,10 @@ const Admin = () => {
   const [tForm, setTForm] = useState({ id: null, title: '', startDate: '', status: 'Upcoming', streamUrl: '' });
   const [nForm, setNForm] = useState({ id: null, title: '', content: '' });
   const [uForm, setUForm] = useState({ id: null, nickname: '', role: 'User', wins: 0, losses: 0 });
+
+  const [selectedTournament, setSelectedTournament] = useState(null);
+  const [tournamentMatches, setTournamentMatches] = useState([]);
+  const [matchEdit, setMatchEdit] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -65,6 +70,38 @@ const Admin = () => {
     }
   };
 
+  const loadBracket = async (id) => {
+    try {
+      const res = await axios.get(`/api/tournaments/${id}`);
+      setSelectedTournament(res.data.tournament);
+      setTournamentMatches(res.data.matches || []);
+      setMatchEdit(null);
+    } catch (error) {
+      alert('Error loading bracket');
+    }
+  };
+
+  const handleGenerateBracket = async (id) => {
+    if (!window.confirm('This will clear existing matches and generate a new bracket. Proceed?')) return;
+    try {
+      await axios.post(`/api/admin/tournaments/${id}/generate`, {}, getAuthConfig());
+      loadBracket(id);
+    } catch (error) {
+      alert('Error generating bracket');
+    }
+  };
+
+  const handleMatchSave = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`/api/admin/matches/${matchEdit._id}`, matchEdit, getAuthConfig());
+      alert('Match updated');
+      setMatchEdit(null);
+      loadBracket(selectedTournament._id);
+    } catch (error) {
+      alert('Error updating match');
+    }
+  };
 
   const handleNSave = async (e) => {
     e.preventDefault();
@@ -124,13 +161,14 @@ const Admin = () => {
       </section>
 
       {/* TABS */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '30px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '30px', flexWrap: 'wrap' }}>
         <button className={`btn ${activeTab === 'tournaments' ? 'cta' : 'ghost'}`} onClick={() => setActiveTab('tournaments')}>Schedule</button>
+        <button className={`btn ${activeTab === 'brackets' ? 'cta' : 'ghost'}`} onClick={() => setActiveTab('brackets')}>🏆 Brackets</button>
         <button className={`btn ${activeTab === 'news' ? 'cta' : 'ghost'}`} onClick={() => setActiveTab('news')}>News</button>
         <button className={`btn ${activeTab === 'users' ? 'cta' : 'ghost'}`} onClick={() => setActiveTab('users')}>Users</button>
       </div>
 
-      <div className="neon-card" style={{ maxWidth: '800px', margin: '0 auto', border: '1px solid var(--color-cta)' }}>
+      <div className="neon-card" style={{ maxWidth: '900px', margin: '0 auto', border: '1px solid var(--color-cta)' }}>
         
         {/* TOURNAMENTS TAB */}
         {activeTab === 'tournaments' && (
@@ -154,19 +192,168 @@ const Admin = () => {
                 {tForm.id && <button type="button" className="btn ghost" onClick={() => setTForm({ id: null, title: '', startDate: '', status: 'Upcoming', streamUrl: '' })}>CANCEL</button>}
               </div>
             </form>
-            <hr style={{ borderColor: '#333', marginBottom: '20px' }} />
+            <hr style={{ borderColor: 'var(--color-card-border)', marginBottom: '20px' }} />
             {tournaments.map(t => (
-              <div key={t._id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #222' }}>
+              <div key={t._id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid var(--color-card-border)' }}>
                 <div>
                   <strong>{t.title}</strong> - {t.status} <br/>
                   <small>{new Date(t.startDate).toLocaleString()}</small>
                 </div>
                 <div>
                   <button onClick={() => setTForm({ id: t._id, title: t.title, startDate: t.startDate.substring(0,16), status: t.status, streamUrl: t.streamUrl || '' })} style={{ marginRight: '10px', background: 'none', color: 'var(--color-primary)', border: 'none', cursor: 'pointer' }}>Edit</button>
-                  <button onClick={() => handleTDelete(t._id)} style={{ background: 'none', color: 'red', border: 'none', cursor: 'pointer' }}>Delete</button>
+                  <button onClick={() => handleTDelete(t._id)} style={{ background: 'none', color: 'var(--color-cta)', border: 'none', cursor: 'pointer' }}>Delete</button>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* BRACKETS TAB */}
+        {activeTab === 'brackets' && (
+          <div>
+            {!selectedTournament ? (
+              <>
+                <h2 style={{ marginBottom: '20px', color: 'var(--color-cta)' }}>Select a Tournament to Manage Bracket</h2>
+                {tournaments.length === 0 && <p>No tournaments found. Create one in the Schedule tab first.</p>}
+                {tournaments.map(t => (
+                  <div key={t._id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid var(--color-card-border)', alignItems: 'center' }}>
+                    <div>
+                      <strong>{t.title}</strong> - {t.status}
+                    </div>
+                    <div>
+                      <button onClick={() => loadBracket(t._id)} style={{ padding: '8px 16px', background: 'var(--color-secondary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>⚙ Manage Bracket</button>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <div>
+                <button onClick={() => setSelectedTournament(null)} className="btn ghost" style={{ marginBottom: '20px' }}>&larr; Back to Tournaments List</button>
+                <h2 style={{ marginBottom: '20px', color: 'var(--color-cta)' }}>Bracket Editor: {selectedTournament.title}</h2>
+                
+                <div style={{ marginBottom: '30px', padding: '15px', background: 'rgba(0,0,0,0.05)', border: '1px solid var(--color-card-border)', borderRadius: '8px' }}>
+                  <h3>1. Select Participants ({selectedTournament.participants?.length || 0})</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
+                    {users.map(u => {
+                      const isSelected = selectedTournament.participants?.includes(u._id);
+                      return (
+                        <button 
+                          key={u._id}
+                          onClick={async () => {
+                            let newParticipants = selectedTournament.participants || [];
+                            if (isSelected) {
+                              newParticipants = newParticipants.filter(id => id !== u._id);
+                            } else {
+                              newParticipants = [...newParticipants, u._id];
+                            }
+                            try {
+                              await axios.put(`/api/admin/tournaments/${selectedTournament._id}`, { participants: newParticipants }, getAuthConfig());
+                              setSelectedTournament({...selectedTournament, participants: newParticipants});
+                            } catch (e) {
+                              alert('Error updating participants');
+                            }
+                          }}
+                          style={{
+                            padding: '5px 10px',
+                            background: isSelected ? 'var(--color-primary)' : 'transparent',
+                            color: isSelected ? '#fff' : 'var(--color-text)',
+                            border: `1px solid ${isSelected ? 'var(--color-primary)' : '#555'}`,
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {u.nickname} {isSelected && '✓'}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '20px', padding: '15px', background: 'rgba(0,0,0,0.05)', border: '1px solid var(--color-card-border)', borderRadius: '8px' }}>
+                  <h3>2. Generate Bracket Layout</h3>
+                  <p style={{ marginBottom: '10px', fontSize: '0.9rem', color: '#666' }}>Warning: This will overwrite any existing matches for this tournament!</p>
+                  <button onClick={() => handleGenerateBracket(selectedTournament._id)} className="btn cta">Auto-Generate Matches</button>
+                </div>
+                
+                {matchEdit && (
+                  <form onSubmit={handleMatchSave} style={{ marginBottom: '20px', padding: '20px', border: '2px solid var(--color-primary)', borderRadius: '8px', background: 'var(--color-card-bg)' }}>
+                    <h3 style={{ color: 'var(--color-primary)', marginBottom: '15px' }}>3. Edit Match {matchEdit.matchNumber} (Round {matchEdit.round})</h3>
+                    
+                    <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: '5px' }}>Participant 1</label>
+                        <select 
+                          value={matchEdit.participant1Id ? (typeof matchEdit.participant1Id === 'object' ? matchEdit.participant1Id._id : matchEdit.participant1Id) : ''} 
+                          onChange={e => setMatchEdit({...matchEdit, participant1Id: e.target.value})} 
+                          style={{ width: '100%' }}
+                        >
+                          <option value="">-- None --</option>
+                          {selectedTournament.participants?.map(pid => {
+                            const u = users.find(user => user._id === pid);
+                            if (!u) return null;
+                            return <option key={u._id} value={u._id}>{u.nickname}</option>;
+                          })}
+                        </select>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: '5px' }}>Participant 2</label>
+                        <select 
+                          value={matchEdit.participant2Id ? (typeof matchEdit.participant2Id === 'object' ? matchEdit.participant2Id._id : matchEdit.participant2Id) : ''} 
+                          onChange={e => setMatchEdit({...matchEdit, participant2Id: e.target.value})} 
+                          style={{ width: '100%' }}
+                        >
+                          <option value="">-- None --</option>
+                          {selectedTournament.participants?.map(pid => {
+                            const u = users.find(user => user._id === pid);
+                            if (!u) return null;
+                            return <option key={u._id} value={u._id}>{u.nickname}</option>;
+                          })}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: '5px' }}>Match Winner</label>
+                        <select value={matchEdit.winnerId || ''} onChange={e => setMatchEdit({...matchEdit, winnerId: e.target.value})} style={{ width: '100%' }}>
+                          <option value="">-- Select Winner --</option>
+                          {matchEdit.participant1Id && (
+                            <option value={typeof matchEdit.participant1Id === 'object' ? matchEdit.participant1Id._id : matchEdit.participant1Id}>
+                              {typeof matchEdit.participant1Id === 'object' ? matchEdit.participant1Id.nickname : users.find(u => u._id === matchEdit.participant1Id)?.nickname}
+                            </option>
+                          )}
+                          {matchEdit.participant2Id && (
+                            <option value={typeof matchEdit.participant2Id === 'object' ? matchEdit.participant2Id._id : matchEdit.participant2Id}>
+                              {typeof matchEdit.participant2Id === 'object' ? matchEdit.participant2Id.nickname : users.find(u => u._id === matchEdit.participant2Id)?.nickname}
+                            </option>
+                          )}
+                        </select>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', marginBottom: '5px' }}>Match Status</label>
+                        <select value={matchEdit.status} onChange={e => setMatchEdit({...matchEdit, status: e.target.value})} style={{ width: '100%' }}>
+                          <option value="Scheduled">Scheduled</option>
+                          <option value="InProgress">In Progress</option>
+                          <option value="Completed">Completed</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button type="submit" className="btn cta" style={{flex: 1}}>SAVE MATCH CHANGES</button>
+                      <button type="button" className="btn ghost" onClick={() => setMatchEdit(null)}>CANCEL</button>
+                    </div>
+                  </form>
+                )}
+
+                <div style={{ overflowX: 'auto', background: 'var(--color-bg)', border: '1px solid var(--color-card-border)', padding: '20px', borderRadius: '8px' }}>
+                  <TournamentBracket 
+                    matches={tournamentMatches} 
+                    adminMode={true} 
+                    onMatchClick={(m) => setMatchEdit(m)} 
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 

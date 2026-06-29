@@ -9,12 +9,10 @@ const matchSchema = new mongoose.Schema({
   participant1Id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
   },
   participant2Id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
   },
   winnerId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -30,6 +28,16 @@ const matchSchema = new mongoose.Schema({
   },
   videoUrl: {
     type: String,
+  },
+  round: {
+    type: Number,
+  },
+  matchNumber: {
+    type: Number,
+  },
+  nextMatchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Match',
   },
 }, { timestamps: true });
 

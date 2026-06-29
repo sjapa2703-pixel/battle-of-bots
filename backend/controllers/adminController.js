@@ -12,6 +12,77 @@ const createTournament = async (req, res) => {
   }
 };
 
+const generateBracket = async (req, res) => {
+  try {
+    const tournament = await Tournament.findById(req.params.id);
+    if (!tournament) return res.status(404).json({ message: 'Tournament not found' });
+
+    // Clear existing matches
+    await Match.deleteMany({ tournamentId: tournament._id });
+
+    let participants = [...tournament.participants];
+    // For simplicity, assume 2, 4, 8, 16 etc. We'll pad with nulls to nearest power of 2
+    let power = 1;
+    while (power < participants.length) power *= 2;
+    while (participants.length < power) participants.push(null);
+
+    // Shuffle
+    participants.sort(() => Math.random() - 0.5);
+
+    let matches = [];
+    let matchCounter = 1;
+    
+    let previousRoundMatches = [];
+    
+    // Create first round
+    let currentRoundMatches = [];
+    for (let i = 0; i < participants.length; i += 2) {
+      let m = new Match({
+        tournamentId: tournament._id,
+        participant1Id: participants[i],
+        participant2Id: participants[i+1],
+        round: 1,
+        matchNumber: matchCounter++,
+        status: (participants[i] === null || participants[i+1] === null) ? 'Completed' : 'Scheduled',
+        winnerId: (participants[i] === null) ? participants[i+1] : ((participants[i+1] === null) ? participants[i] : null)
+      });
+      currentRoundMatches.push(m);
+    }
+    previousRoundMatches = [...currentRoundMatches];
+    matches.push(...currentRoundMatches);
+
+    // Create subsequent rounds
+    let roundNum = 2;
+    while (previousRoundMatches.length > 1) {
+      currentRoundMatches = [];
+      for (let i = 0; i < previousRoundMatches.length; i += 2) {
+        let m = new Match({
+          tournamentId: tournament._id,
+          round: roundNum,
+          matchNumber: matchCounter++,
+          status: 'Scheduled',
+        });
+        currentRoundMatches.push(m);
+        // Link previous matches to this one
+        previousRoundMatches[i].nextMatchId = m._id;
+        previousRoundMatches[i+1].nextMatchId = m._id;
+      }
+      matches.push(...currentRoundMatches);
+      previousRoundMatches = [...currentRoundMatches];
+      roundNum++;
+    }
+
+    // Save all
+    for (let m of matches) {
+      await m.save();
+    }
+
+    res.json({ message: 'Bracket generated', matches });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const updateTournament = async (req, res) => {
   try {
     const tournament = await Tournament.findById(req.params.id);
@@ -22,8 +93,11 @@ const updateTournament = async (req, res) => {
       tournament.startDate = req.body.startDate || tournament.startDate;
       tournament.endDate = req.body.endDate || tournament.endDate;
       tournament.status = req.body.status || tournament.status;
-      tournament.streamUrl = req.body.streamUrl || tournament.streamUrl;
-      tournament.posterUrl = req.body.posterUrl || tournament.posterUrl;
+      tournament.streamUrl = req.body.streamUrl !== undefined ? req.body.streamUrl : tournament.streamUrl;
+      tournament.posterUrl = req.body.posterUrl !== undefined ? req.body.posterUrl : tournament.posterUrl;
+      if (req.body.participants) {
+        tournament.participants = req.body.participants;
+      }
 
       const updatedTournament = await tournament.save();
       res.json(updatedTournament);
@@ -49,10 +123,27 @@ const updateMatch = async (req, res) => {
     const match = await Match.findById(req.params.id);
 
     if (match) {
-      match.winnerId = req.body.winnerId || match.winnerId;
+      const oldWinnerId = match.winnerId ? match.winnerId.toString() : null;
+      
+      match.winnerId = req.body.winnerId !== undefined ? req.body.winnerId : match.winnerId;
       match.status = req.body.status || match.status;
       match.scheduledAt = req.body.scheduledAt || match.scheduledAt;
-      match.videoUrl = req.body.videoUrl || match.videoUrl;
+      match.videoUrl = req.body.videoUrl !== undefined ? req.body.videoUrl : match.videoUrl;
+      match.participant1Id = req.body.participant1Id !== undefined ? (req.body.participant1Id || null) : match.participant1Id;
+      match.participant2Id = req.body.participant2Id !== undefined ? (req.body.participant2Id || null) : match.participant2Id;
+
+      if (req.body.winnerId && req.body.winnerId !== oldWinnerId && match.nextMatchId) {
+         const nextMatch = await Match.findById(match.nextMatchId);
+         if (nextMatch) {
+             const prevMatches = await Match.find({ nextMatchId: nextMatch._id }).sort('matchNumber');
+             if (prevMatches.length > 0 && prevMatches[0]._id.toString() === match._id.toString()) {
+                 nextMatch.participant1Id = match.winnerId;
+             } else {
+                 nextMatch.participant2Id = match.winnerId;
+             }
+             await nextMatch.save();
+         }
+      }
 
       const updatedMatch = await match.save();
       res.json(updatedMatch);
@@ -164,6 +255,7 @@ const deleteUser = async (req, res) => {
 
 module.exports = {
   createTournament,
+  generateBracket,
   updateTournament,
   deleteTournament,
   createMatch,

@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 
 function Register() {
   const [name, setName] = useState('');
+  const [team, setTeam] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { register } = useContext(AuthContext);
@@ -11,7 +12,7 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await register(name, email, password);
+    const result = await register(name, email, password, team);
     if (result.success) {
       alert(result.message || 'Registration successful! Please check your email to verify your account.');
       navigate('/login');
@@ -32,6 +33,13 @@ function Register() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+          />
+          <input
+            type="text"
+            placeholder="Team Name (Optional)"
+            className="input-field"
+            value={team}
+            onChange={(e) => setTeam(e.target.value)}
           />
           <input
             type="email"

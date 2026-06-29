@@ -38,7 +38,7 @@ const generateToken = (id) => {
 
 const registerUser = async (req, res) => {
   try {
-    const { email, password, nickname } = req.body;
+    const { email, password, nickname, team } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -56,6 +56,7 @@ const registerUser = async (req, res) => {
       email,
       passwordHash: password,
       nickname,
+      team: team || '',
       verificationToken,
       isVerified: false
     });
