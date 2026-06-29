@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { MessageSquare, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const socket = io(import.meta.env.VITE_API_URL || '/', { autoConnect: false });
+const socket = io(import.meta.env.VITE_API_URL || 'https://battle-of-bots.onrender.com', { autoConnect: false });
 
 function Chat() {
   const { user } = useContext(AuthContext);
