@@ -25,22 +25,13 @@ const Home = () => {
   };
 
   useEffect(() => {
-
     const fetchData = async () => {
       try {
         const tRes = await axios.get('/api/tournaments').catch(() => ({ data: [] }));
         const nRes = await axios.get('/api/news').catch(() => ({ data: [] }));
-        
 
-        const mockTournaments = tRes.data.length ? tRes.data : [
-          { _id: '1', title: 'Cyber Clash 2026', startDate: new Date(Date.now() + 86400000).toISOString(), status: 'Upcoming', streamUrl: '' }
-        ];
-        const mockNews = nRes.data.length ? nRes.data : [
-          { _id: '1', title: 'Welcome to Battle of Bots', content: 'The ultimate robot fighting championship is here!', publishedAt: new Date().toISOString() }
-        ];
-
-        setTournaments(mockTournaments);
-        setNews(mockNews);
+        setTournaments(tRes.data);
+        setNews(nRes.data);
       } catch (err) {
         console.error(err);
       } finally {

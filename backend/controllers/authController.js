@@ -51,36 +51,38 @@ const registerUser = async (req, res) => {
     }
 
     const verificationToken = crypto.randomBytes(20).toString('hex');
+    const autoVerify = !process.env.SMTP_HOST; // auto-verify if no real SMTP configured
 
     const user = await User.create({
       email,
       passwordHash: password,
       nickname,
       team: team || '',
-      verificationToken,
-      isVerified: false
+      verificationToken: autoVerify ? null : verificationToken,
+      isVerified: autoVerify
     });
 
     if (user) {
-      const verifyUrl = `http://localhost:5173/verify/${verificationToken}`;
-      
-      try {
-        let info = await transporter.sendMail({
-          from: '"Battle of Bots" <no-reply@nhrl.io>',
-          to: user.email,
-          subject: 'Please verify your email',
-          html: `<p>Welcome, Commander <b>${nickname}</b>!</p><p>Please click <a href="${verifyUrl}">here</a> to verify your account and join the league.</p>`
-        });
-        if (info.messageId && !process.env.SMTP_HOST) {
-          console.log('Verification email preview URL:', nodemailer.getTestMessageUrl(info));
+      if (!autoVerify) {
+        const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify/${verificationToken}`;
+        try {
+          await transporter.sendMail({
+            from: '"Battle of Bots" <no-reply@nhrl.io>',
+            to: user.email,
+            subject: 'Please verify your email',
+            html: `<p>Welcome, Commander <b>${nickname}</b>!</p><p>Please click <a href="${verifyUrl}">here</a> to verify your account and join the league.</p>`
+          });
+        } catch (err) {
+          console.error('Email send failed', err);
         }
-      } catch (err) {
-        console.error('Email send failed', err);
+        res.status(201).json({
+          message: 'Registration successful! Please check your email to verify your account.'
+        });
+      } else {
+        res.status(201).json({
+          message: 'Registration successful! You can now log in.'
+        });
       }
-
-      res.status(201).json({
-        message: 'Registration successful! Please check your email to verify your account.'
-      });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
     }

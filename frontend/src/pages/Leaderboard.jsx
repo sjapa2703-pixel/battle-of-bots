@@ -13,13 +13,8 @@ const Leaderboard = () => {
         const res = await axios.get('/api/users');
         setUsers(res.data.slice(0, 10));
       } catch (err) {
-        console.error('API Error, using fallback data:', err);
-        const mockUsers = [
-          { _id: '1', nickname: 'BotCrusher99', wins: 42, losses: 5 },
-          { _id: '2', nickname: 'NeonNinja', wins: 38, losses: 12 },
-          { _id: '3', nickname: 'SteelTitan', wins: 30, losses: 15 },
-        ];
-        setUsers(mockUsers.slice(0, 10));
+        console.error('Failed to fetch leaderboard:', err);
+        setUsers([]);
       } finally {
         setLoading(false);
       }
